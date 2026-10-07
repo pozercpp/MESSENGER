@@ -6,12 +6,13 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <cstring>
+#include <string_view>
 #include <error.h>
 
-const std::string SERVER_PIPE = "/tmp/msg_server";
-const std::string CLIENT_PIPE_PREFIX = "/tmp/msg_";
+constexpr std::string_view SERVER_PIPE = "/tmp/msg_server";
+constexpr std::string_view CLIENT_PIPE_PREFIX = "/tmp/msg_";
 
-Client::Client(const std::string& _login) : login(_login), client_pipe(CLIENT_PIPE_PREFIX + login) {
+Client::Client(const std::string& _login) : login(_login), client_pipe(std::string(CLIENT_PIPE_PREFIX) + login) {
     unlink(client_pipe.c_str());
     if (mkfifo(client_pipe.c_str(), 0666) == -1) {
         std::cerr << "Failed to create client pipe" << std::endl;
@@ -46,38 +47,19 @@ void Client::send_command(const std::string& cmd) {
 }
 
 void Client::receive_messages() {
-    //std::cout << "DEBUG: Starting receive_messages for " << login << std::endl;
-    //std::cout << "DEBUG: Pipe: " << client_pipe << std::endl;
-    
     int fd = open(client_pipe.c_str(), O_RDWR);
-    if (fd == -1) {
-      //  std::cout << "DEBUG: Failed to open pipe: " << strerror(errno) << std::endl;
-        return;
-    }
-    
-    //std::cout << "DEBUG: Pipe opened successfully" << std::endl;
-    
+    if (fd == -1) return;
     char buffer[1024];
     while (true) {
-      //  std::cout << "DEBUG: Waiting to read from pipe..." << std::endl;
         ssize_t bytes = read(fd, buffer, sizeof(buffer) - 1);
-        //std::cout << "DEBUG: read() returned: " << bytes << std::endl;
-        
         if (bytes > 0) {
             buffer[bytes] = '\0';
-          //  std::cout << "DEBUG: Received data: " << buffer << std::endl;
             std::cout << "\nReceived: " << buffer << "\n> " << std::flush;
-        } else if (bytes == 0) {
-            //std::cout << "DEBUG: EOF on pipe" << std::endl;
-            break;
         } else {
-            //std::cout << "DEBUG: read error: " << strerror(errno) << std::endl;
             break;
         }
     }
-    
     close(fd);
-    //std::cout << "DEBUG: receive_messages exiting" << std::endl;
 }
 
 void Client::run() {

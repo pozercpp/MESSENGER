@@ -6,6 +6,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <cstring>
+#include <string_view>
 
 const std::string SERVER_PIPE = "/tmp/msg_server";
 const std::string CLIENT_PIPE_PREFIX = "/tmp/msg_";
